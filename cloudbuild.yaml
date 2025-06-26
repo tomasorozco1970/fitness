@@ -1,6 +1,4 @@
-# ------------------------------------------------------------------
-# PLANTILLA DE DIAGNÓSTICO
-# ------------------------------------------------------------------
+# VERSIÓN NUCLEAR - SOLO PARA DIAGNÓSTICO
 
 availableSecrets:
   secretManager:
@@ -8,56 +6,9 @@ availableSecrets:
     env: 'GEMINI_API_KEY_CONTENT'
 
 steps:
-# ------------------------------------------------------------------
-# PASO DE DIAGNÓSTICO AÑADIDO
-# Su única misión es usar la variable del secreto.
-# Si este paso se ejecuta, sabemos que el secreto se carga correctamente.
 - name: 'gcr.io/cloud-builders/gcloud'
-  id: 'Debug Secret Usage'
   entrypoint: 'bash'
   args:
   - -c
   - |
-    echo "Paso de depuración: Verificando el uso del secreto."
-    echo "Los primeros 5 caracteres de GEMINI_API_KEY_CONTENT son: $(echo $$GEMINI_API_KEY_CONTENT | cut -c 1-5)"
-# ------------------------------------------------------------------
-
-# Paso 1: Construir la imagen de Docker
-- name: 'gcr.io/cloud-builders/docker'
-  id: 'Build Docker Image'
-  args: [
-    'build',
-    '--tag=gcr.io/${PROJECT_ID}/${_SERVICE_NAME}:${SHORT_SHA}',
-    '--build-arg', 'API_KEY_FOR_BUILD=$$GEMINI_API_KEY_CONTENT',
-    '.'
-  ]
-
-# Paso 2: Publicar la imagen de Docker en Google Container Registry
-- name: 'gcr.io/cloud-builders/docker'
-  id: 'Push Docker Image'
-  args: ['push', 'gcr.io/${PROJECT_ID}/${_SERVICE_NAME}:${SHORT_SHA}']
-
-# Paso 3: Desplegar la nueva imagen en Cloud Run
-- name: 'gcr.io/cloud-builders/gcloud'
-  id: 'Deploy to Cloud Run'
-  args: [
-    'run', 'deploy', '${_SERVICE_NAME}',
-    '--image=gcr.io/${PROJECT_ID}/${_SERVICE_NAME}:${SHORT_SHA}',
-    '--region=${_REGION}',
-    '--platform=managed',
-    '--allow-unauthenticated',
-    '--port=8080'
-  ]
-
-# Define las imágenes finales
-images:
-- 'gcr.io/${PROJECT_ID}/${_SERVICE_NAME}:${SHORT_SHA}'
-
-# Define variables de sustitución
-substitutions:
-  _SERVICE_NAME: 'fitness'
-  _REGION: 'us-central1'
-
-# Define opciones de compilación
-options:
-  logging: CLOUD_LOGGING_ONLY
+    echo "Usando el secreto: $(echo $$GEMINI_API_KEY_CONTENT | cut -c 1-5)"
