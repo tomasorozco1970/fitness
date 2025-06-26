@@ -4,5 +4,4 @@
 options:
   # Opcional: si sigues queriendo ver los logs en la UI
   logging: CLOUD_LOGGING_ONLY 
-  # Obligatorio para esta solución: especifica el bucket
-  logsBucket: 'gs://tu-proyecto-id-cloudbuild-logs' 
+ 
