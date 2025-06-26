@@ -1,16 +1,17 @@
 # ------------------------------------------------------------------
-# PRUEBA DE FUEGO: Forzar un error nuevo y diferente
+# VERSIÓN FINAL Y BUENA - AHORA SÍ
 # ------------------------------------------------------------------
 
+# Define secretos de Secret Manager que estarán disponibles para la compilación
 availableSecrets:
   secretManager:
   - versionName: projects/fitness-464117/secrets/estaesunadieta/versions/latest
     env: 'GEMINI_API_KEY_CONTENT'
 
+# Pasos de la compilación
 steps:
-# Paso 1: HE CAMBIADO EL NOMBRE DE LA HERRAMIENTA PARA FORZAR UN ERROR
-# Si esta compilación falla con un error sobre "ESTO-DEBE-FALLAR", entonces el archivo se actualizó.
-- name: 'gcr.io/cloud-builders/ESTO-DEBE-FALLAR' # <--- ¡¡¡EL CAMBIO ESTÁ AQUÍ!!!
+# Paso 1: Construir la imagen de Docker
+- name: 'gcr.io/cloud-builders/docker'
   id: 'Build Docker Image'
   args: [
     'build',
@@ -19,31 +20,32 @@ steps:
     '.'
   ]
 
-# He comentado el resto de los pasos para que el fallo sea inmediato.
-# - name: 'gcr.io/cloud-builders/docker'
-#   id: 'Push Docker Image'
-#   args: ['push', 'gcr.io/${PROJECT_ID}/${_SERVICE_NAME}:${SHORT_SHA}']
-#
-# - name: 'gcr.io/cloud-builders/gcloud'
-#   id: 'Deploy to Cloud Run'
-#   args: [
-#     'run', 'deploy', '${_SERVICE_NAME}',
-#     '--image=gcr.io/${PROJECT_ID}/${_SERVICE_NAME}:${SHORT_SHA}',
-#     '--region=${_REGION}',
-#     '--platform=managed',
-#     '--allow-unauthenticated',
-#     '--port=8080'
-#   ]
+# Paso 2: Publicar la imagen de Docker en Google Container Registry
+- name: 'gcr.io/cloud-builders/docker'
+  id: 'Push Docker Image'
+  args: ['push', 'gcr.io/${PROJECT_ID}/${_SERVICE_NAME}:${SHORT_SHA}']
 
-# Define las imágenes finales
+# Paso 3: Desplegar la nueva imagen en Cloud Run
+- name: 'gcr.io/cloud-builders/gcloud'
+  id: 'Deploy to Cloud Run'
+  args: [
+    'run', 'deploy', '${_SERVICE_NAME}',
+    '--image=gcr.io/${PROJECT_ID}/${_SERVICE_NAME}:${SHORT_SHA}',
+    '--region=${_REGION}',
+    '--platform=managed',
+    '--allow-unauthenticated',
+    '--port=8080'
+  ]
+
+# Define las imágenes finales que se deben registrar después de la compilación
 images:
 - 'gcr.io/${PROJECT_ID}/${_SERVICE_NAME}:${SHORT_SHA}'
 
-# Define variables de sustitución
+# Define variables de sustitución que puedes cambiar al ejecutar el activador
 substitutions:
-  _SERVICE_NAME: 'fitness'
-  _REGION: 'us-central1'
+  _SERVICE_NAME: 'fitness' # Nombre de tu servicio en Cloud Run
+  _REGION: 'us-central1' # Región donde está tu servicio de Cloud Run
 
-# Define opciones de compilación
+# Define opciones de compilación, como el manejo de logs (para el error de service_account)
 options:
   logging: CLOUD_LOGGING_ONLY
