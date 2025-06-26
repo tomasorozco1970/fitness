@@ -5,7 +5,7 @@
 # Define secretos de Secret Manager que estarán disponibles para la compilación
 availableSecrets:
   secretManager:
-  - versionName: projects/YOUR_PROJECT_ID_HERE/secrets/YOUR_GEMINI_API_KEY_SECRET_NAME_HERE/versions/latest
+  - versionName: projects/fitness-464117/secrets/estaesunadieta/versions/latest
     env: 'GEMINI_API_KEY_CONTENT'
 
 # ESTA ES LA SECCIÓN OBLIGATORIA QUE FALTABA O ESTABA VACÍA
