@@ -1,15 +1,27 @@
 # ------------------------------------------------------------------
-# PLANTILLA COMPLETA Y CORREGIDA PARA cloudbuild.yaml
+# PLANTILLA DE DIAGNÓSTICO
 # ------------------------------------------------------------------
 
-# Define secretos de Secret Manager que estarán disponibles para la compilación
 availableSecrets:
   secretManager:
   - versionName: projects/fitness-464117/secrets/estaesunadieta/versions/latest
     env: 'GEMINI_API_KEY_CONTENT'
 
-# Pasos de la compilación
 steps:
+# ------------------------------------------------------------------
+# PASO DE DIAGNÓSTICO AÑADIDO
+# Su única misión es usar la variable del secreto.
+# Si este paso se ejecuta, sabemos que el secreto se carga correctamente.
+- name: 'gcr.io/cloud-builders/gcloud'
+  id: 'Debug Secret Usage'
+  entrypoint: 'bash'
+  args:
+  - -c
+  - |
+    echo "Paso de depuración: Verificando el uso del secreto."
+    echo "Los primeros 5 caracteres de GEMINI_API_KEY_CONTENT son: $(echo $$GEMINI_API_KEY_CONTENT | cut -c 1-5)"
+# ------------------------------------------------------------------
+
 # Paso 1: Construir la imagen de Docker
 - name: 'gcr.io/cloud-builders/docker'
   id: 'Build Docker Image'
@@ -37,15 +49,15 @@ steps:
     '--port=8080'
   ]
 
-# Define las imágenes finales que se deben registrar después de la compilación
+# Define las imágenes finales
 images:
 - 'gcr.io/${PROJECT_ID}/${_SERVICE_NAME}:${SHORT_SHA}'
 
-# Define variables de sustitución que puedes cambiar al ejecutar el activador
+# Define variables de sustitución
 substitutions:
-  _SERVICE_NAME: 'fitness' # Nombre de tu servicio en Cloud Run
-  _REGION: 'us-central1' # Región donde está tu servicio de Cloud Run
+  _SERVICE_NAME: 'fitness'
+  _REGION: 'us-central1'
 
-# Define opciones de compilación, como el manejo de logs
+# Define opciones de compilación
 options:
   logging: CLOUD_LOGGING_ONLY
