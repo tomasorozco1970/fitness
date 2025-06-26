@@ -1,3 +1,11 @@
+# Contenido para tu archivo cloudbuild.yaml
+
+# Define una sección para secretos disponibles de Secret Manager
+availableSecrets:
+  secretManager:
+  - versionName: projects/YOUR_PROJECT_ID_HERE/secrets/YOUR_GEMINI_API_KEY_SECRET_NAME_HERE/versions/latest
+    env: 'GEMINI_API_KEY_CONTENT'
+
 steps:
 # Paso 1: Construir la imagen de Docker
 - name: 'gcr.io/cloud-builders/docker'
@@ -5,8 +13,7 @@ steps:
   args: [
     'build',
     '--tag=gcr.io/${PROJECT_ID}/${_SERVICE_NAME}:${SHORT_SHA}',
-    # --- AQUÍ ESTÁ EL CAMBIO ---
-    '--build-arg', 'API_KEY_FOR_BUILD=$$GEMINI_API_KEY_CONTENT',
+    '--build-arg', 'API_KEY_FOR_BUILD=${GEMINI_API_KEY_CONTENT}',
     '.'
   ]
 
@@ -28,4 +35,14 @@ steps:
     '--set-env-vars=^#^NODE_ENV=production'
   ]
 
-# ... el resto de tu archivo sigue igual
+# Define las imágenes que se construyeron
+images:
+- 'gcr.io/${PROJECT_ID}/${_SERVICE_NAME}:${SHORT_SHA}'
+
+# Define sustituciones (variables)
+substitutions:
+  _SERVICE_NAME: 'your-cloud-run-service-name-here' # Reemplaza esto, ej: fitness-app
+  _REGION: 'your-cloud-run-region-here'           # Reemplaza esto, ej: us-central1
+
+options:
+  logging: CLOUD_LOGGING_ONLY
