@@ -1,14 +1,51 @@
-# VERSIÓN NUCLEAR - SOLO PARA DIAGNÓSTICO
+# ------------------------------------------------------------------
+# VERSIÓN FINAL Y COMPLETA
+# ------------------------------------------------------------------
 
+# Define secretos de Secret Manager que estarán disponibles para la compilación
 availableSecrets:
   secretManager:
   - versionName: projects/fitness-464117/secrets/estaesunadieta/versions/latest
     env: 'GEMINI_API_KEY_CONTENT'
 
+# Pasos de la compilación
 steps:
+# Paso 1: Construir la imagen de Docker
+- name: 'gcr.io/cloud-builders/docker'
+  id: 'Build Docker Image'
+  args: [
+    'build',
+    '--tag=gcr.io/${PROJECT_ID}/${_SERVICE_NAME}:${SHORT_SHA}',
+    '--build-arg', 'API_KEY_FOR_BUILD=$$GEMINI_API_KEY_CONTENT',
+    '.'
+  ]
+
+# Paso 2: Publicar la imagen de Docker en Google Container Registry
+- name: 'gcr.io/cloud-builders/docker'
+  id: 'Push Docker Image'
+  args: ['push', 'gcr.io/${PROJECT_ID}/${_SERVICE_NAME}:${SHORT_SHA}']
+
+# Paso 3: Desplegar la nueva imagen en Cloud Run
 - name: 'gcr.io/cloud-builders/gcloud'
-  entrypoint: 'bash'
-  args:
-  - -c
-  - |
-    echo "Usando el secreto: $(echo $$GEMINI_API_KEY_CONTENT | cut -c 1-5)"
+  id: 'Deploy to Cloud Run'
+  args: [
+    'run', 'deploy', '${_SERVICE_NAME}',
+    '--image=gcr.io/${PROJECT_ID}/${_SERVICE_NAME}:${SHORT_SHA}',
+    '--region=${_REGION}',
+    '--platform=managed',
+    '--allow-unauthenticated',
+    '--port=8080'
+  ]
+
+# Define las imágenes finales que se deben registrar después de la compilación
+images:
+- 'gcr.io/${PROJECT_ID}/${_SERVICE_NAME}:${SHORT_SHA}'
+
+# Define variables de sustitución que puedes cambiar al ejecutar el activador
+substitutions:
+  _SERVICE_NAME: 'fitness' # Nombre de tu servicio en Cloud Run
+  _REGION: 'us-central1' # Región donde está tu servicio de Cloud Run
+
+# ESTA ES LA SECCIÓN CLAVE QUE RESUELVE EL ERROR ACTUAL
+options:
+  logging: CLOUD_LOGGING_ONLY
