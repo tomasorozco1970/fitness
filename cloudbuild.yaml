@@ -8,7 +8,7 @@ availableSecrets:
   - versionName: projects/fitness-464117/secrets/estaesunadieta/versions/latest
     env: 'GEMINI_API_KEY_CONTENT'
 
-# ESTA ES LA SECCIÓN OBLIGATORIA QUE FALTABA O ESTABA VACÍA
+# Pasos de la compilación
 steps:
 # Paso 1: Construir la imagen de Docker
 - name: 'gcr.io/cloud-builders/docker'
