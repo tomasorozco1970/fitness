@@ -1,48 +1,8 @@
-# Contenido para tu archivo cloudbuild.yaml
+# ... (toda tu configuración de steps, images, substitutions)
 
-# Define una sección para secretos disponibles de Secret Manager
-availableSecrets:
-  secretManager:
-  - versionName: projects/YOUR_PROJECT_ID_HERE/secrets/YOUR_GEMINI_API_KEY_SECRET_NAME_HERE/versions/latest
-    env: 'GEMINI_API_KEY_CONTENT'
-
-steps:
-# Paso 1: Construir la imagen de Docker
-- name: 'gcr.io/cloud-builders/docker'
-  id: 'Build Docker Image'
-  args: [
-    'build',
-    '--tag=gcr.io/${PROJECT_ID}/${_SERVICE_NAME}:${SHORT_SHA}',
-    '--build-arg', 'API_KEY_FOR_BUILD=${GEMINI_API_KEY_CONTENT}',
-    '.'
-  ]
-
-# Paso 2: Publicar la imagen de Docker en el registro
-- name: 'gcr.io/cloud-builders/docker'
-  id: 'Push Docker Image'
-  args: ['push', 'gcr.io/${PROJECT_ID}/${_SERVICE_NAME}:${SHORT_SHA}']
-
-# Paso 3: Desplegar en Cloud Run
-- name: 'gcr.io/cloud-builders/gcloud'
-  id: 'Deploy to Cloud Run'
-  args: [
-    'run', 'deploy', '${_SERVICE_NAME}',
-    '--image=gcr.io/${PROJECT_ID}/${_SERVICE_NAME}:${SHORT_SHA}',
-    '--region=${_REGION}',
-    '--platform=managed',
-    '--allow-unauthenticated',
-    '--port=8080',
-    '--set-env-vars=^#^NODE_ENV=production'
-  ]
-
-# Define las imágenes que se construyeron
-images:
-- 'gcr.io/${PROJECT_ID}/${_SERVICE_NAME}:${SHORT_SHA}'
-
-# Define sustituciones (variables)
-substitutions:
-  _SERVICE_NAME: 'your-cloud-run-service-name-here' # Reemplaza esto, ej: fitness-app
-  _REGION: 'your-cloud-run-region-here'           # Reemplaza esto, ej: us-central1
-
+# Al final de tu archivo cloudbuild.yaml
 options:
-  logging: CLOUD_LOGGING_ONLY
+  # Opcional: si sigues queriendo ver los logs en la UI
+  logging: CLOUD_LOGGING_ONLY 
+  # Obligatorio para esta solución: especifica el bucket
+  logsBucket: 'gs://tu-proyecto-id-cloudbuild-logs' 
