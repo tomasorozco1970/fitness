@@ -1,31 +1,47 @@
 # ------------------------------------------------------------------
-# VERSIÓN FINAL Y BUENA - AHORA SÍ
+# cloudbuild.yaml DEFINITIVO (Estrategia de Archivo)
 # ------------------------------------------------------------------
 
-# Define secretos de Secret Manager que estarán disponibles para la compilación
 availableSecrets:
   secretManager:
   - versionName: projects/fitness-464117/secrets/estaesunadieta/versions/latest
     env: 'GEMINI_API_KEY_CONTENT'
 
-# Pasos de la compilación
 steps:
-# Paso 1: Construir la imagen de Docker
+# PASO 0: Escribir el secreto en un archivo llamado .apikey
+- name: 'bash'
+  id: 'Write Secret to File'
+  args:
+  - '-c'
+  - |
+    echo "$$GEMINI_API_KEY_CONTENT" > .apikey
+
+# PASO 1: Construir la imagen de Docker (¡¡SIN --build-arg!!)
 - name: 'gcr.io/cloud-builders/docker'
   id: 'Build Docker Image'
   args: [
     'build',
     '--tag=gcr.io/${PROJECT_ID}/${_SERVICE_NAME}:${SHORT_SHA}',
-    '--build-arg', 'API_KEY_FOR_BUILD=$$GEMINI_API_KEY_CONTENT',
     '.'
   ]
+  waitFor: ['Write Secret to File']
 
-# Paso 2: Publicar la imagen de Docker en Google Container Registry
+# PASO 2: Limpiar el archivo del secreto por seguridad
+- name: 'bash'
+  id: 'Clean up secret file'
+  args:
+  - '-c'
+  - |
+    rm .apikey
+  waitFor: ['Build Docker Image']
+
+# PASO 3: Publicar la imagen
 - name: 'gcr.io/cloud-builders/docker'
   id: 'Push Docker Image'
   args: ['push', 'gcr.io/${PROJECT_ID}/${_SERVICE_NAME}:${SHORT_SHA}']
+  waitFor: ['Clean up secret file']
 
-# Paso 3: Desplegar la nueva imagen en Cloud Run
+# PASO 4: Desplegar en Cloud Run
 - name: 'gcr.io/cloud-builders/gcloud'
   id: 'Deploy to Cloud Run'
   args: [
@@ -36,16 +52,14 @@ steps:
     '--allow-unauthenticated',
     '--port=8080'
   ]
+  waitFor: ['Push Docker Image']
 
-# Define las imágenes finales que se deben registrar después de la compilación
 images:
 - 'gcr.io/${PROJECT_ID}/${_SERVICE_NAME}:${SHORT_SHA}'
 
-# Define variables de sustitución que puedes cambiar al ejecutar el activador
 substitutions:
-  _SERVICE_NAME: 'fitness' # Nombre de tu servicio en Cloud Run
-  _REGION: 'us-central1' # Región donde está tu servicio de Cloud Run
+  _SERVICE_NAME: 'fitness'
+  _REGION: 'us-central1'
 
-# Define opciones de compilación, como el manejo de logs (para el error de service_account)
 options:
   logging: CLOUD_LOGGING_ONLY
