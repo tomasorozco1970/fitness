@@ -1,7 +1,51 @@
-# ... (toda tu configuración de steps, images, substitutions)
+# ------------------------------------------------------------------
+# PLANTILLA COMPLETA Y CORREGIDA PARA cloudbuild.yaml
+# ------------------------------------------------------------------
 
-# Al final de tu archivo cloudbuild.yaml
+# Define secretos de Secret Manager que estarán disponibles para la compilación
+availableSecrets:
+  secretManager:
+  - versionName: projects/YOUR_PROJECT_ID_HERE/secrets/YOUR_GEMINI_API_KEY_SECRET_NAME_HERE/versions/latest
+    env: 'GEMINI_API_KEY_CONTENT'
+
+# ESTA ES LA SECCIÓN OBLIGATORIA QUE FALTABA O ESTABA VACÍA
+steps:
+# Paso 1: Construir la imagen de Docker
+- name: 'gcr.io/cloud-builders/docker'
+  id: 'Build Docker Image'
+  args: [
+    'build',
+    '--tag=gcr.io/${PROJECT_ID}/${_SERVICE_NAME}:${SHORT_SHA}',
+    '--build-arg', 'API_KEY_FOR_BUILD=$$GEMINI_API_KEY_CONTENT',
+    '.'
+  ]
+
+# Paso 2: Publicar la imagen de Docker en Google Container Registry
+- name: 'gcr.io/cloud-builders/docker'
+  id: 'Push Docker Image'
+  args: ['push', 'gcr.io/${PROJECT_ID}/${_SERVICE_NAME}:${SHORT_SHA}']
+
+# Paso 3: Desplegar la nueva imagen en Cloud Run
+- name: 'gcr.io/cloud-builders/gcloud'
+  id: 'Deploy to Cloud Run'
+  args: [
+    'run', 'deploy', '${_SERVICE_NAME}',
+    '--image=gcr.io/${PROJECT_ID}/${_SERVICE_NAME}:${SHORT_SHA}',
+    '--region=${_REGION}',
+    '--platform=managed',
+    '--allow-unauthenticated',
+    '--port=8080'
+  ]
+
+# Define las imágenes finales que se deben registrar después de la compilación
+images:
+- 'gcr.io/${PROJECT_ID}/${_SERVICE_NAME}:${SHORT_SHA}'
+
+# Define variables de sustitución que puedes cambiar al ejecutar el activador
+substitutions:
+  _SERVICE_NAME: 'fitness' # Nombre de tu servicio en Cloud Run
+  _REGION: 'us-central1' # Región donde está tu servicio de Cloud Run
+
+# Define opciones de compilación, como el manejo de logs
 options:
-  # Opcional: si sigues queriendo ver los logs en la UI
-  logging: CLOUD_LOGGING_ONLY 
- 
+  logging: CLOUD_LOGGING_ONLY
